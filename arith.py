@@ -1,4 +1,4 @@
-# Building a simple interpreter https://ruslanspivak.com/lsbasi-part1/
+# Code reference: https://ruslanspivak.com/lsbasi-part1/
 
 # Token types
 INTEGER, PLUS, MINUS, MUL, DIV, SPACE, EOF = 'INTEGER', 'PLUS', 'MINUS', 'MUL', 'DIV', 'SPACE', 'EOF'
@@ -18,7 +18,7 @@ class Lexer():
         self.current_char = self.text[self.pos]
 
     def error(self):
-        raise Exception('Error in parsing the input')
+        raise Exception('Error')
 
     # Skips the whitespaces in between
     def skip_whitespaces(self):
@@ -80,15 +80,15 @@ class Lexer():
 
 
 # Parser --> Builds an AST
-# Operand node of the AST
-class OperandNode():
+
+class OperationNode():
     def __init__(self, left, op, right):
         self.left = left
         self.op = op
         self.right = right
 
 # Number node of the AST
-class NumNode():
+class NumberNode():
     def __init__(self, token):
         self.token = token
 
@@ -98,7 +98,7 @@ class Parser():
         self.current_token = self.lexer.get_next_token()
 
     def error(self):
-        raise Exception('Error in parsing the input')
+        raise Exception('Error')
 
     # Processes the current token and returns the next token
     def eat(self, token_type):
@@ -112,7 +112,7 @@ class Parser():
     def eval_num(self):
         # print('Evaluating Number:', self.current_token.value)
         if self.current_token.type == INTEGER:
-            num_node = NumNode(self.current_token)
+            num_node = NumberNode(self.current_token)
             self.eat(INTEGER)
         else:
             self.error()
@@ -120,56 +120,45 @@ class Parser():
         return num_node
 
 
-    # Computes the Multiplication or Division
-    # Implemented Division to complete basic Calculator features
-    # Have not handled special cases for division(Divide by 0)
-    def compute_mul_div(self):
-        # print('inside compute_mul_div')
+    # Multiplication or Division
+
+   
+    def mul_div(self):
+     
 
         node = self.eval_num()
         while self.current_token.type in (MUL, DIV):
             token = self.current_token
             if self.current_token.type == MUL:
                 self.eat(self.current_token.type)
-                # result = result * self.current_token.value
-                # self.eat(INTEGER)
+
             elif self.current_token.type == DIV:
                 self.eat(self.current_token.type)
-                # result = result / self.current_token.value
-                # self.eat(INTEGER)
+           
 
-            node = OperandNode(left = node, op = token, right = self.eval_num())
-            # print(type(node))
-            # print('left:', node.left.token.value, ' right:', node.right.token.value)
+            node = OperationNode(left = node, op = token, right = self.eval_num())
 
         return node
 
     # Computes the Addition or Subtraction
-    def compute_add_sub(self):
-        # print('inside compute_add_sub')
+    def add_sub(self):
 
         # Setting the precedence
-        # Multiplication and Division should be performed before addition and subtraction
-        node = self.compute_mul_div()
+       
+        node = self.mul_div()
 
         # print('computing addition/subtraction')
         while self.current_token.type in (PLUS, MINUS):
             token = self.current_token
             if self.current_token.type == PLUS:
                 self.eat(self.current_token.type)
-                # result = result + self.compute_mul_div()
-                # self.eat(INTEGER)
+              
             elif self.current_token.type == MINUS:
                 self.eat(self.current_token.type)
-                # result = result - self.compute_mul_div()
-                # self.eat(INTEGER)
+          
 
-            node = OperandNode(left = node, op = token, right = self.compute_mul_div())
+            node = OperationNode(left = node, op = token, right = self.mul_div())
 
-            # print(type(node))
-            # print('left:', node.left.token.value, ' right:', node.right.token.value)
-
-        # print('returning from compute_add_sub')
         return node
 
 
@@ -179,15 +168,15 @@ class Interpreter():
         self.parserAST = parserAST
 
     def error(self):
-        raise Exception('Error in parsing the input')
+        raise Exception('Error')
 
     # Parsing the AST and calculating the value
     def interpret(self, node):
         # print('Interpret node: ', node.__class__.__name__)
-        if node.__class__.__name__ == 'NumNode':
+        if node.__class__.__name__ == 'NumberNode':
             return node.token.value
-        elif node.__class__.__name__ == 'OperandNode':
-            # print('inside OperandNode: ',node.op)
+        elif node.__class__.__name__ == 'OperationNode':
+  
             if node.op.type == MUL:
                 return (self.interpret(node.left) * self.interpret(node.right))
             elif node.op.type == DIV:
@@ -205,7 +194,7 @@ def main():
     while True:
         try:
             text = input()
-            # print('Input: ', text)
+   
         except EOFError:
             break
         if not text:
@@ -213,11 +202,7 @@ def main():
 
         lexer = Lexer(text)
         parser = Parser(lexer)
-        ast = parser.compute_add_sub()
-
-        # print('AST:',ast.__class__.__name__)
-        # print('AST Left:', type(ast.left))
-        # print('AST Right:', type(ast.right))
+        ast = parser.add_sub()
 
         interpreter = Interpreter(ast)
         result = interpreter.calculate()
